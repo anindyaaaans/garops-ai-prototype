@@ -929,6 +929,16 @@ function simulatePayment() {
   }, 1800);
 }
 
+function showNotifToast(msg) {
+  const toast = document.getElementById('notif-toast');
+  const title = toast.querySelector('.nb-title');
+  title.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3500);
+}
+
 function shareReceipt(btn) {
   btn.innerHTML = '<i class="fa-solid fa-check"></i> Resi Dibagikan!';
   btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
