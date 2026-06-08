@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GarOps AI — Clickable Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#0056B3;--primary-grad:linear-gradient(135deg,#0056B3 0%,#0099ff 100%);
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+  --text-bold:#0f172a;--text-main:#334155;--text-muted:#64748b;
+  --card-bg:rgba(255,255,255,0.85);--card-border:rgba(0,82,204,0.08);
+  --sh-sm:0 2px 8px rgba(0,0,0,0.06);--sh-md:0 6px 18px rgba(0,82,204,0.09);
+  --ff:'Outfit',sans-serif;
+}
+body{font-family:var(--ff);background:#dde3ed;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:36px 20px 48px;position:relative;overflow-x:hidden}
+body::before{content:'';position:fixed;top:-200px;right:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(0,153,255,.1) 0%,transparent 70%);filter:blur(60px);pointer-events:none}
+body::after{content:'';position:fixed;bottom:-200px;left:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(16,185,129,.07) 0%,transparent 70%);filter:blur(60px);pointer-events:none}
+
+/* Page header */
+.page-hdr{text-align:center;margin-bottom:28px;position:relative;z-index:1}
+.page-hdr h1{font-size:1.5rem;font-weight:700;color:#0f172a;letter-spacing:-.5px}
+.page-hdr p{font-size:.85rem;color:#64748b;margin-top:4px}
+.flow-hint{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.flow-hint span{font-size:.72rem;background:rgba(0,86,179,.07);color:var(--primary);border:1px solid rgba(0,86,179,.15);padding:3px 10px;border-radius:20px;font-weight:500}
+
+/* Phone shell */
+.phone-wrap{position:relative;z-index:1}
+.phone-outer{background:#0f172a;border-radius:52px;padding:14px;box-shadow:0 50px 100px -20px rgba(0,0,0,.45),inset 0 2px 8px rgba(255,255,255,.1),0 0 0 2px #334155;position:relative}
+.phone-outer::before{content:'';position:absolute;left:-4px;top:100px;width:4px;height:30px;background:#334155;border-radius:2px 0 0 2px;box-shadow:0 44px 0 #334155,0 84px 0 #334155}
+.phone-outer::after{content:'';position:absolute;right:-4px;top:140px;width:4px;height:64px;background:#334155;border-radius:0 2px 2px 0}
+.phone-screen{width:390px;height:844px;background:#f8fafc;border-radius:40px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.dynamic-island{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:118px;height:34px;background:#000;border-radius:20px;z-index:100;pointer-events:none}
+
+/* Screens area */
+.screens-area{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;background:#f8fafc;transform:translateX(100%);transition:transform .34s cubic-bezier(.4,0,.2,1),opacity .34s ease;opacity:0;overflow-y:auto;overflow-x:hidden;padding:58px 16px 16px;pointer-events:none}
+.screen.active{transform:translateX(0);opacity:1;pointer-events:auto}
+.screen.exit{transform:translateX(-25%);opacity:0;pointer-events:none}
+.screen::-webkit-scrollbar{width:0}
+
+/* Bottom nav */
+.bottom-nav{height:74px;background:#fff;border-top:1px solid rgba(0,0,0,.06);display:flex;justify-content:space-around;align-items:center;flex-shrink:0;border-radius:0 0 40px 40px;z-index:30;padding:0 8px}
+.nav-tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 16px;border-radius:12px;transition:all .2s;flex:1;-webkit-tap-highlight-color:transparent;user-select:none}
+.nav-tab i{font-size:1.2rem;color:var(--text-muted);transition:color .2s}
+.nav-tab span{font-size:.68rem;font-weight:500;color:var(--text-muted)}
+.nav-tab.active i{color:var(--primary)}
+.nav-tab.active span{color:var(--primary);font-weight:700}
+
+/* Typography */
+h1{font-size:1.2rem;font-weight:700;color:var(--text-bold);letter-spacing:-.4px}
+h2{font-size:.98rem;font-weight:700;color:var(--text-bold)}
+h3{font-size:.88rem;font-weight:600;color:var(--text-bold)}
+.subtitle{font-size:.75rem;color:var(--text-muted)}
+
+/* Screen header */
+.scr-hdr{margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
+
+/* Balance bar */
+.balance-bar{background:#fff;border:1px solid var(--card-border);border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh-sm)}
+.bal-logo{font-size:.65rem;font-weight:700;color:var(--primary);background:rgba(0,86,179,.08);padding:3px 7px;border-radius:5px;white-space:nowrap}
+.bal-info{display:flex;flex-direction:column}
+.bal-label{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;font-weight:500}
+.bal-amount{font-size:.95rem;font-weight:700;color:var(--text-bold)}
+
+/* Buttons */
+.btn{font-family:var(--ff);display:flex;align-items:center;justify-content:center;gap:7px;border:none;border-radius:12px;font-weight:600;cursor:pointer;transition:all .2s ease;padding:13px 16px;font-size:.88rem;width:100%;text-decoration:none;color:inherit}
+.btn+.btn{margin-top:8px}
+.btn-primary{background:var(--primary-grad);color:#fff;box-shadow:0 4px 14px rgba(0,86,179,.28)}
+.btn-primary:active{transform:scale(.98)}
+.btn-secondary{background:#fff;color:var(--text-bold);border:1px solid rgba(0,0,0,.08);box-shadow:var(--sh-sm)}
+.btn-ghost{background:transparent;color:var(--primary);border:1px solid rgba(0,86,179,.2)}
+.btn-sm{padding:8px 12px;font-size:.78rem;border-radius:9px;width:auto}
+
+/* Glass card */
+.glass-card{background:var(--card-bg);backdrop-filter:blur(20px);border:1px solid var(--card-border);border-radius:16px;padding:14px;box-shadow:var(--sh-md);margin-bottom:12px}
+
+/* Section label */
+.sec-label{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:8px}
+
+/* Back button */
+.back-btn{display:inline-flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-family:var(--ff);font-size:.85rem;font-weight:600;color:var(--primary);padding:0;margin-bottom:12px}
+
+/* ======================== GARPAY ======================== */
+.services-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.svc-card{background:#fff;border:2px solid rgba(0,82,204,.07);border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;cursor:pointer;transition:all .18s;box-shadow:var(--sh-sm);-webkit-tap-highlight-color:transparent;user-select:none}
+.svc-card:active{border-color:var(--primary);background:rgba(0,86,179,.04);transform:scale(.97)}
+.svc-icon{width:38px;height:38px;border-radius:10px;background:rgba(0,86,179,.08);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.svc-card h3{font-size:.78rem;line-height:1.2}
+.svc-price{font-weight:700;font-size:.82rem;color:var(--primary)}
+.svc-desc{font-size:.65rem;color:var(--text-muted)}
+
+/* Recent txn */
+.txn-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.txn-item:last-child{border-bottom:none}
+.txn-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+.txn-icon.blue{background:rgba(0,86,179,.08);color:var(--primary)}
+.txn-icon.green{background:rgba(16,185,129,.1);color:var(--success)}
+.txn-name{font-size:.8rem;font-weight:600;color:var(--text-bold)}
+.txn-meta{font-size:.65rem;color:var(--text-muted);margin-top:1px}
+.txn-amount{font-weight:700;font-size:.85rem;color:var(--text-bold);white-space:nowrap}
+.ap-tag{font-size:.6rem;font-weight:700;color:var(--primary);background:rgba(0,86,179,.08);padding:1px 5px;border-radius:4px}
+
+/* ======================== BOTTOM SHEET ======================== */
+.bs-overlay{position:absolute;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(3px);z-index:40;opacity:0;pointer-events:none;transition:opacity .3s}
+.bs-overlay.show{opacity:1;pointer-events:auto}
+.bottom-sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;z-index:50;transform:translateY(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);max-height:88%;display:flex;flex-direction:column;box-shadow:0 -20px 40px rgba(0,0,0,.14)}
+.bottom-sheet.show{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:10px auto 0;flex-shrink:0}
+.sheet-hdr{padding:12px 16px 10px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.sheet-hdr h2{font-size:.98rem}
+.sheet-close{width:28px;height:28px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--text-muted)}
+.sheet-body{flex:1;overflow-y:auto;padding:12px 16px}
+.sheet-body::-webkit-scrollbar{width:0}
+.sheet-foot{padding:12px 16px 20px;border-top:1px solid rgba(0,0,0,.05);flex-shrink:0}
+.bom-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:8px}
+.bom-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.bom-row:last-child{border-bottom:none}
+.bom-name{font-size:.82rem;font-weight:500;color:var(--text-bold)}
+.bom-qty{display:flex;align-items:center;gap:5px;margin-top:3px}
+.qty-btn{width:22px;height:22px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;color:var(--text-main)}
+.qty-num{width:26px;text-align:center;font-size:.78rem;font-weight:600;color:var(--text-bold)}
+.bom-price{font-size:.85rem;font-weight:600;color:var(--text-bold)}
+.sum-row{display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-muted);margin-bottom:5px}
+.sum-row.total{font-size:1rem;font-weight:700;color:var(--text-bold);border-top:1px dashed rgba(0,0,0,.1);padding-top:8px;margin-bottom:10px}
+.sum-row.total .t-amt{color:var(--primary)}
+.pts-chip{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:6px;margin-bottom:12px;font-size:.75rem;color:#d97706;font-weight:600}
+
+/* ======================== QRIS SCREEN ======================== */
+.qris-inner{display:flex;flex-direction:column;align-items:center}
+.merchant-badge{text-align:center;margin-bottom:16px}
+.merchant-badge h1{font-size:1.1rem}
+.merchant-badge .mid{font-size:.7rem;color:var(--text-muted);margin-top:2px}
+.qris-amt-box{background:var(--primary-grad);color:#fff;border-radius:16px;padding:14px 20px;text-align:center;width:100%;margin-bottom:16px}
+.qris-amt-box .ql{font-size:.7rem;opacity:.8;margin-bottom:3px}
+.qris-amt-box .qa{font-size:1.8rem;font-weight:700}
+.qris-amt-box .qs{font-size:.78rem;opacity:.85;margin-top:3px}
+.qris-code{background:#fff;border-radius:20px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.1);margin-bottom:14px;border:1px solid rgba(0,0,0,.04)}
+.qris-code img{width:175px;height:175px;display:block}
+.pay-status{display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;padding:10px 14px;border-radius:10px;width:100%;margin-bottom:14px}
+.pay-status.waiting{background:rgba(245,158,11,.08);color:#d97706}
+.pay-status.success{background:rgba(16,185,129,.08);color:#059669}
+.sim-btn{background:rgba(0,86,179,.05);border:1px dashed rgba(0,86,179,.2);color:var(--primary);border-radius:10px;padding:11px;font-family:var(--ff);font-size:.8rem;font-weight:600;cursor:pointer;width:100%;text-align:center}
+.sim-note{font-size:.65rem;color:var(--text-muted);text-align:center;margin-top:5px}
+
+/* ======================== RECEIPT ======================== */
+.rcpt-icon{text-align:center;margin-bottom:12px}
+.check-circle{width:56px;height:56px;background:rgba(16,185,129,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--success);margin:0 auto 10px}
+.rcpt-amount{font-size:2rem;font-weight:700;color:var(--text-bold);margin:4px 0}
+.rcpt-card{background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,.05);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh-sm)}
+.rcpt-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:.82rem}
+.rcpt-row:last-child{border-bottom:none}
+.rcpt-row .rl{color:var(--text-muted)}
+.rcpt-row .rv{font-weight:600;color:var(--text-bold)}
+.rcpt-row .rv.accent{color:var(--primary)}
+.rcpt-row .rv.success{color:var(--success)}
+.reminder-banner{background:rgba(0,86,179,.04);border:1px solid rgba(0,86,179,.1);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.78rem;color:var(--text-main)}
+.reminder-banner i{color:var(--primary);flex-shrink:0}
+
+/* ======================== GARSTOCK ======================== */
+.stats-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.stat-chip{display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:20px;font-size:.68rem;font-weight:600}
+.stat-chip.danger{background:rgba(239,68,68,.08);color:#dc2626;border:1px solid rgba(239,68,68,.15)}
+.stat-chip.warning{background:rgba(245,158,11,.08);color:#d97706;border:1px solid rgba(245,158,11,.15)}
+.stat-chip.safe{background:rgba(16,185,129,.08);color:#059669;border:1px solid rgba(16,185,129,.15)}
+.filter-row{display:flex;gap:6px;margin-bottom:12px}
+.fchip{font-family:var(--ff);padding:5px 12px;border-radius:20px;font-size:.73rem;font-weight:500;cursor:pointer;border:1px solid rgba(0,0,0,.07);background:#fff;color:var(--text-muted);transition:all .2s;-webkit-tap-highlight-color:transparent}
+.fchip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.sku-card{background:#fff;border:1.5px solid rgba(0,82,204,.06);border-radius:14px;padding:12px;margin-bottom:10px;cursor:pointer;box-shadow:var(--sh-sm);transition:all .18s;-webkit-tap-highlight-color:transparent}
+.sku-card:active{transform:scale(.99)}
+.sku-card.danger{border-color:rgba(239,68,68,.22)}
+.sku-card.warning{border-color:rgba(245,158,11,.22)}
+.sku-card.safe{border-color:rgba(16,185,129,.15)}
+.sku-hdr{display:flex;justify-content:space-between;align-items:flex-start}
+.sku-info h3{font-size:.84rem;margin-bottom:2px}
+.sku-meta{font-size:.68rem;color:var(--text-muted)}
+.sku-days{display:flex;align-items:center;gap:5px;font-size:.73rem;font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.danger{background:var(--danger);box-shadow:0 0 6px rgba(239,68,68,.5)}
+.dot.warning{background:var(--warning);box-shadow:0 0 6px rgba(245,158,11,.4)}
+.dot.safe{background:var(--success)}
+.sku-exp{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.06)}
+.fc-labels{display:flex;justify-content:space-between;font-size:.62rem;color:var(--text-muted);margin-bottom:4px}
+.fc-bar{height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;position:relative;display:flex}
+.fc-seg{height:100%}
+.fc-seg.ss{width:10%;background:#334155}
+.fc-seg.dfill{background:var(--danger)}
+.fc-seg.wfill{background:var(--warning)}
+.fc-rop{position:absolute;top:0;bottom:0;width:2px;background:#0f172a;left:50%;z-index:2}
+.mini-bars{display:flex;align-items:flex-end;gap:3px;height:22px;margin:8px 0 2px}
+.mb{flex:1;background:rgba(0,86,179,.15);border-radius:2px 2px 0 0}
+.mb.hi{background:var(--primary)}
+.ai-insight{background:rgba(0,86,179,.04);border-left:3px solid var(--primary);border-radius:0 8px 8px 0;padding:8px 10px;font-size:.71rem;line-height:1.4;color:var(--text-main);margin:8px 0;display:flex;gap:6px}
+.ai-insight i{color:var(--primary);flex-shrink:0;margin-top:1px}
+.eoq-row{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.eoq-text{font-size:.77rem;color:var(--text-bold);font-weight:500}
+.eoq-text strong{color:var(--primary)}
+
+/* Restock modal */
+.modal-overlay{position:absolute;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);z-index:60;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal-card{background:#fff;border-radius:24px 24px 0 0;padding:20px;width:100%;transform:translateY(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);box-shadow:0 -20px 40px rgba(0,0,0,.15)}
+.modal-overlay.show .modal-card{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:0 auto 14px}
+.modal-title{font-size:1.05rem;font-weight:700;color:var(--text-bold);margin-bottom:4px}
+.modal-sub{font-size:.78rem;color:var(--text-muted);margin-bottom:14px}
+.fg{margin-bottom:11px}
+.fg label{display:block;font-size:.7rem;color:var(--text-muted);margin-bottom:3px;font-weight:500}
+.fg .fval{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.86rem;font-weight:600;color:var(--text-bold)}
+.fg input{width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-family:var(--ff);font-size:.86rem;font-weight:600;color:var(--text-bold);outline:none}
+.fg input:focus{border-color:var(--primary)}
+.modal-total{display:flex;justify-content:space-between;padding:12px 0 14px;border-top:1px dashed #e2e8f0;margin-top:4px}
+.modal-total .mt-l{font-size:.84rem;color:var(--text-muted)}
+.modal-total .mt-a{font-size:1.2rem;font-weight:700;color:var(--primary)}
+
+/* ======================== RESTOCK SUCCESS ======================== */
+.success-inner{text-align:center;padding-top:8px}
+.success-icon{width:64px;height:64px;background:rgba(16,185,129,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--success);margin:0 auto 12px}
+.success-card{background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,.05);overflow:hidden;margin:14px 0;box-shadow:var(--sh-sm);text-align:left}
+.srow{display:flex;justify-content:space-between;padding:11px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:.82rem}
+.srow:last-child{border-bottom:none}
+.srow .sl{color:var(--text-muted)}
+.srow .sv{font-weight:600;color:var(--text-bold)}
+.srow .sv.green{color:var(--success)}
+.rem-warn{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.78rem}
+.rem-warn i{color:var(--warning);flex-shrink:0}
+
+/* ======================== GARSCORE ======================== */
+.score-tabs{display:flex;gap:6px;margin-bottom:14px}
+.score-tab{flex:1;font-family:var(--ff);padding:7px 6px;border-radius:10px;font-size:.75rem;font-weight:600;cursor:pointer;border:1px solid rgba(0,0,0,.06);background:#fff;color:var(--text-muted);transition:all .2s;text-align:center;-webkit-tap-highlight-color:transparent}
+.score-tab.active{background:var(--primary-grad);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(0,86,179,.25)}
+.score-panel{display:none}
+.score-panel.show{display:block}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.metric-card{background:#fff;border-radius:12px;padding:12px;border:1px solid rgba(0,82,204,.05);box-shadow:var(--sh-sm)}
+.metric-card .mcl{font-size:.63rem;color:var(--text-muted);font-weight:500;margin-bottom:4px}
+.metric-card .mcv{font-size:1.05rem;font-weight:700;color:var(--text-bold)}
+.metric-card .mct{font-size:.63rem;font-weight:600;margin-top:3px}
+.mct.up{color:var(--success)}.mct.down{color:var(--danger)}.mct.neutral{color:var(--text-muted)}
+.full{grid-column:span 2}
+.split-bar-labels{display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:3px}
+.split-bar{height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.split-fill{height:100%;border-radius:3px;background:var(--primary);width:78%}
+.trend-wrap{background:#fff;border-radius:14px;padding:12px;margin-bottom:12px;border:1px solid rgba(0,0,0,.04);box-shadow:var(--sh-sm)}
+.trend-wrap h3{font-size:.84rem;margin-bottom:8px}
+.trend-bars{display:flex;align-items:flex-end;gap:4px;height:60px;position:relative;border-bottom:1px solid #e2e8f0;margin-bottom:4px}
+.t-bar{flex:1;background:rgba(0,86,179,.15);border-radius:3px 3px 0 0}
+.t-bar.hi{background:var(--primary-grad)}
+.trend-avg{position:absolute;left:0;right:0;border-top:1.5px dashed #f59e0b;z-index:1;bottom:35%}
+.trend-labels{display:flex;justify-content:space-between;font-size:.6rem;color:var(--text-muted)}
+.bkd-item{margin-bottom:10px}
+.bkd-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.bkd-name{font-size:.78rem;font-weight:500;color:var(--text-bold)}
+.bkd-stats{font-size:.67rem;color:var(--text-muted)}
+.bkd-bar{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.bkd-fill{height:100%;border-radius:3px}
+.sku-li{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(0,0,0,.04);font-size:.8rem}
+.sku-li:last-child{border-bottom:none}
+.sku-li .sln{font-weight:500;color:var(--text-main)}
+.sku-li .slc{font-size:.63rem;color:var(--danger);margin-top:1px}
+.sku-li .slv{font-weight:700;color:var(--text-bold)}
+.profile-badge-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(0,86,179,.06);border:1px solid rgba(0,86,179,.12);color:var(--primary);padding:4px 10px;border-radius:20px;font-size:.7rem;font-weight:600;margin-bottom:12px}
+.profile-desc{font-size:.77rem;color:var(--text-muted);line-height:1.5;margin-bottom:14px}
+.dimension{display:flex;gap:12px;align-items:center;padding:11px;border-radius:12px;border:1px solid rgba(0,82,204,.06);background:rgba(0,82,204,.02);margin-bottom:8px}
+.dim-icon{width:36px;height:36px;border-radius:10px;background:rgba(0,86,179,.08);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.dim-content h4{font-size:.7rem;color:var(--text-muted);margin-bottom:3px;font-weight:500}
+.dim-row{display:flex;justify-content:space-between;align-items:baseline}
+.dim-val{font-size:.95rem;font-weight:700;color:var(--text-bold)}
+.dim-status{font-size:.68rem;font-weight:600}
+.dim-status.green{color:var(--success)}.dim-status.warn{color:var(--warning)}
+.disclaimer{font-size:.68rem;color:var(--text-muted);line-height:1.4;text-align:center;font-style:italic;padding:0 8px;margin-bottom:14px}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.fa-spin{animation:spin .75s linear infinite}
+
+/* misc */
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mb0{margin-bottom:0!important}
+.text-muted{color:var(--text-muted)}.text-primary{color:var(--primary)}.text-success{color:var(--success)}
+
+/* Proto footer */
+.proto-foot{font-size:.72rem;color:#94a3b8;text-align:center;margin-top:16px;position:relative;z-index:1}
+.proto-foot span{color:var(--primary);font-weight:600}
+
+@media(max-width:440px){.phone-outer{padding:10px}.phone-screen{width:360px;height:780px}}
+</style>
+</head>
+<body>
+
+<div class="page-hdr">
+  <h1>GarOps AI</h1>
+  <p>Clickable Mobile Prototype — tap untuk berinteraksi</p>
+  <div class="flow-hint">
+    <span>GarPay → Pilih layanan → BOM → QRIS → Resi</span>
+    <span>GarStock → Tinjau stok → Restok → Sukses</span>
+    <span>GarScore → Ringkasan / Grafik / Profil</span>
+  </div>
+</div>
+
+<div class="phone-wrap">
+  <div class="phone-outer">
+    <div class="phone-screen" id="phone-screen">
+
+      <div class="dynamic-island"></div>
+
+      <!-- ================================================ -->
+      <!-- SCREENS AREA                                     -->
+      <!-- ================================================ -->
+      <div class="screens-area">
+
+        <!-- SCREEN: GarPay Main -->
+        <div class="screen active" id="screen-garpay">
+          <div class="scr-hdr">
+            <div>
+              <h1>Bengkel Jaya Motor</h1>
+              <p class="subtitle">Sistem POS GarPay · 8 Jun 2026</p>
+            </div>
+            <div class="balance-bar">
+              <div class="bal-logo">AstraPay</div>
+              <div class="bal-info">
+                <span class="bal-label">Saldo Merchant</span>
+                <span class="bal-amount">Rp 12.450.000</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="sec-label">Pilih Layanan</p>
+          <div class="services-grid">
+            <div class="svc-card" onclick="openBOM('Servis Rutin',150000,[{n:'Yamalube 20W-40 0.8L',q:1,p:45000},{n:'Filter Oli Standard',q:1,p:35000},{n:'Biaya Jasa Mekanik',q:1,p:70000}])">
+              <div class="svc-icon"><i class="fa-solid fa-motorcycle"></i></div>
+              <h3>Servis Rutin</h3>
+              <p class="svc-desc">Tune-up lengkap</p>
+              <span class="svc-price">Rp 150.000</span>
+            </div>
+            <div class="svc-card" onclick="openBOM('Ganti Oli',85000,[{n:'AHM Motor Oil 0.8L',q:1,p:45000},{n:'Filter Oli',q:1,p:15000},{n:'Biaya Jasa',q:1,p:25000}])">
+              <div class="svc-icon"><i class="fa-solid fa-oil-can"></i></div>
+              <h3>Ganti Oli</h3>
+              <p class="svc-desc">Penggantian cepat</p>
+              <span class="svc-price">Rp 85.000</span>
+            </div>
+            <div class="svc-card" onclick="openBOM('Servis Besar',250000,[{n:'V-Belt Yamaha',q:1,p:85000},{n:'CVT Grease & Cleaner',q:1,p:35000},{n:'Kampas Rem Depan',q:1,p:55000},{n:'Biaya Jasa Mekanik',q:1,p:75000}])">
+              <div class="svc-icon"><i class="fa-solid fa-gear"></i></div>
+              <h3>Servis Besar</h3>
+              <p class="svc-desc">CVT + injektor</p>
+              <span class="svc-price">Rp 250.000</span>
+            </div>
+            <div class="svc-card" onclick="openBOM('Ganti Ban',120000,[{n:'Ban IRC 90/90-14',q:1,p:95000},{n:'Biaya Jasa',q:1,p:25000}])">
+              <div class="svc-icon"><i class="fa-solid fa-circle-dot"></i></div>
+              <h3>Ganti Ban</h3>
+              <p class="svc-desc">Depan / belakang</p>
+              <span class="svc-price">Rp 120.000</span>
+            </div>
+          </div>
+
+          <p class="sec-label">Transaksi Terakhir</p>
+          <div class="glass-card mb0">
+            <div class="txn-item">
+              <div class="txn-icon blue"><i class="fa-solid fa-motorcycle"></i></div>
+              <div style="flex:1">
+                <div class="txn-name">Servis Rutin — Honda Beat</div>
+                <div class="txn-meta"><span class="ap-tag">AstraPay</span> &nbsp;10:42 · +300 Poin</div>
+              </div>
+              <div class="txn-amount">Rp 150rb</div>
+            </div>
+            <div class="txn-item">
+              <div class="txn-icon blue"><i class="fa-solid fa-oil-can"></i></div>
+              <div style="flex:1">
+                <div class="txn-name">Ganti Oli — Yamaha NMAX</div>
+                <div class="txn-meta"><span class="ap-tag">AstraPay</span> &nbsp;09:15 · +170 Poin</div>
+              </div>
+              <div class="txn-amount">Rp 85rb</div>
+            </div>
+            <div class="txn-item">
+              <div class="txn-icon green"><i class="fa-solid fa-money-bill"></i></div>
+              <div style="flex:1">
+                <div class="txn-name">Tambal Ban — Scoopy</div>
+                <div class="txn-meta">Tunai &nbsp;08:30</div>
+              </div>
+              <div class="txn-amount">Rp 30rb</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCREEN: QRIS Payment -->
+        <div class="screen" id="screen-qris">
+          <button class="back-btn" onclick="goBack('garpay')"><i class="fa-solid fa-chevron-left"></i> Kembali</button>
+          <div class="qris-inner">
+            <div class="merchant-badge">
+              <h1>Bengkel Jaya Motor</h1>
+              <p class="mid">Merchant ID: GM-2024-00142</p>
+            </div>
+            <div class="qris-amt-box">
+              <p class="ql">Total Pembayaran</p>
+              <div class="qa" id="qris-amount">Rp 0</div>
+              <p class="qs" id="qris-service">—</p>
+            </div>
+            <div class="qris-code">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QRIS">
+            </div>
+            <div class="pay-status waiting" id="pay-status">
+              <i class="fa-solid fa-spinner fa-spin"></i>
+              <span>Menunggu pelanggan scan QRIS...</span>
+            </div>
+            <button class="sim-btn" id="sim-btn" onclick="simulatePayment()">
+              <i class="fa-solid fa-bolt"></i> &nbsp;Simulasi: Pelanggan Berhasil Bayar
+            </button>
+            <p class="sim-note">Tap tombol di atas untuk mensimulasikan webhook AstraPay berhasil</p>
+          </div>
+        </div>
+
+        <!-- SCREEN: Receipt -->
+        <div class="screen" id="screen-receipt">
+          <div class="rcpt-icon">
+            <div class="check-circle"><i class="fa-solid fa-check"></i></div>
+            <h1>Pembayaran Berhasil!</h1>
+            <div class="rcpt-amount" id="rcpt-amount">Rp 0</div>
+            <p class="text-muted" style="font-size:.75rem">via AstraPay QRIS · Hari ini 11:25</p>
+          </div>
+          <div class="rcpt-card">
+            <div class="rcpt-row"><span class="rl">Layanan</span><span class="rv" id="rcpt-service">—</span></div>
+            <div class="rcpt-row"><span class="rl">Metode</span><span class="rv"><span class="ap-tag">AstraPay</span> QRIS</span></div>
+            <div class="rcpt-row"><span class="rl">Merchant ID</span><span class="rv">GM-2024-00142</span></div>
+            <div class="rcpt-row"><span class="rl">AstraPoints</span><span class="rv accent" id="rcpt-pts">+0 Poin</span></div>
+            <div class="rcpt-row"><span class="rl">Saldo Baru</span><span class="rv success" id="rcpt-balance">—</span></div>
+          </div>
+          <div class="reminder-banner">
+            <i class="fa-solid fa-bell"></i>
+            <div>
+              <strong>Pengingat Servis Berikutnya</strong><br>
+              <span style="font-size:.7rem;color:var(--text-muted)">Notif otomatis ke pelanggan: 12 Agt 2026</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="share-btn" onclick="shareReceipt(this)">
+            <i class="fa-brands fa-whatsapp"></i> Bagikan ke WhatsApp
+          </button>
+          <button class="btn btn-secondary" onclick="goToSection('garpay')">
+            <i class="fa-solid fa-cash-register"></i> Transaksi Baru
+          </button>
+        </div>
+
+        <!-- SCREEN: GarStock Main -->
+        <div class="screen" id="screen-garstock">
+          <div class="scr-hdr">
+            <div>
+              <h1>GarStock</h1>
+              <p class="subtitle">Inventaris Cerdas · 142 SKU · Baru saja sinkron</p>
+            </div>
+            <div class="stats-row">
+              <div class="stat-chip danger"><i class="fa-solid fa-circle-xmark"></i> 1 Kritis</div>
+              <div class="stat-chip warning"><i class="fa-solid fa-triangle-exclamation"></i> 2 Waspada</div>
+            </div>
+          </div>
+          <div class="filter-row">
+            <button class="fchip" onclick="setFilter(this)">Semua</button>
+            <button class="fchip active" onclick="setFilter(this)">Peringatan (3)</button>
+            <button class="fchip" onclick="setFilter(this)">Aman (139)</button>
+          </div>
+
+          <!-- Critical SKU -->
+          <div class="sku-card danger">
+            <div class="sku-hdr">
+              <div class="sku-info"><h3>AHM Motor Oil 0.8L</h3><p class="sku-meta">Rata 7-hari: 12 unit/hari</p></div>
+              <div class="sku-days"><div class="dot danger"></div><span style="color:var(--danger)">Sisa 2 Hari</span></div>
+            </div>
+            <div class="sku-exp">
+              <div class="fc-labels"><span>Stok: 24 unit</span><span>ROP: 45 unit</span></div>
+              <div class="fc-bar">
+                <div class="fc-seg ss"></div>
+                <div class="fc-seg dfill" style="width:14%"></div>
+                <div class="fc-rop"></div>
+              </div>
+              <div class="mini-bars">
+                <div class="mb" style="height:30%"></div><div class="mb" style="height:40%"></div>
+                <div class="mb" style="height:50%"></div><div class="mb" style="height:45%"></div>
+                <div class="mb" style="height:60%"></div><div class="mb" style="height:70%"></div>
+                <div class="mb hi" style="height:100%"></div>
+              </div>
+              <div class="ai-insight">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span><strong>Peringatan Musiman:</strong> Multiplier Lebaran +30% aktif. Proyeksi stok habis dalam 2 hari. Segera lakukan restok.</span>
+              </div>
+              <div class="eoq-row">
+                <span class="eoq-text">Saran EOQ: <strong>150 unit</strong></span>
+                <button class="btn btn-primary btn-sm" onclick="openRestockModal(event)">
+                  <i class="fa-solid fa-paper-plane"></i> Restok
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Warning SKU -->
+          <div class="sku-card warning">
+            <div class="sku-hdr">
+              <div class="sku-info"><h3>Minyak Rem DOT-4 50ml</h3><p class="sku-meta">Rata 7-hari: 5 unit/hari</p></div>
+              <div class="sku-days"><div class="dot warning"></div><span style="color:var(--warning)">Sisa 6 Hari</span></div>
+            </div>
+          </div>
+
+          <!-- Warning SKU 2 -->
+          <div class="sku-card warning">
+            <div class="sku-hdr">
+              <div class="sku-info"><h3>V-Belt Yamaha NMAX</h3><p class="sku-meta">Rata 7-hari: 3 unit/hari</p></div>
+              <div class="sku-days"><div class="dot warning"></div><span style="color:var(--warning)">Sisa 7 Hari</span></div>
+            </div>
+          </div>
+
+          <!-- Safe SKU -->
+          <div class="sku-card safe">
+            <div class="sku-hdr">
+              <div class="sku-info"><h3>Busi NGK CR6HSA</h3><p class="sku-meta">Rata 7-hari: 8 unit/hari</p></div>
+              <div class="sku-days"><div class="dot safe"></div><span style="color:var(--success)">&gt;30 Hari</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCREEN: Restock Success -->
+        <div class="screen" id="screen-restock-success">
+          <div class="success-inner">
+            <div class="success-icon"><i class="fa-solid fa-check"></i></div>
+            <h1>Transfer Berhasil!</h1>
+            <p class="text-muted mt8">Pembayaran ke distributor terkonfirmasi via AstraPay Disbursement</p>
+            <div class="success-card">
+              <div class="srow"><span class="sl">Distributor</span><span class="sv">Astra Parts Hub</span></div>
+              <div class="srow"><span class="sl">Item SKU</span><span class="sv">AHM Motor Oil 0.8L</span></div>
+              <div class="srow"><span class="sl">Qty Restok</span><span class="sv green">+150 Unit</span></div>
+              <div class="srow"><span class="sl">Stok Baru</span><span class="sv">174 Unit (~14 hari)</span></div>
+              <div class="srow"><span class="sl">Total Transfer</span><span class="sv">Rp 6.750.000</span></div>
+              <div class="srow"><span class="sl">Metode</span><span class="sv"><span class="ap-tag">AstraPay</span> Disbursement</span></div>
+            </div>
+            <div class="reminder-banner">
+              <i class="fa-solid fa-calendar-check"></i>
+              <div><strong>Estimasi Kedatangan</strong><br><span style="font-size:.7rem;color:var(--text-muted)">Besok, 9 Jun 2026 · pkl. 10.00</span></div>
+            </div>
+            <div class="rem-warn">
+              <i class="fa-solid fa-bell"></i>
+              <div><strong style="color:#d97706">Restok Otomatis Berikutnya</strong><br><span style="font-size:.7rem;color:var(--text-muted)">Dijadwalkan: 22 Jun 2026</span></div>
+            </div>
+            <button class="btn btn-primary" onclick="goToSection('garstock')">
+              <i class="fa-solid fa-boxes-stacked"></i> Kembali ke Inventaris
+            </button>
+          </div>
+        </div>
+
+        <!-- SCREEN: GarScore -->
+        <div class="screen" id="screen-garscore">
+          <div class="scr-hdr">
+            <div><h1>GarScore</h1><p class="subtitle">Analitik Operasional · 8 Jun 2026</p></div>
+          </div>
+          <div class="score-tabs">
+            <button class="score-tab active" onclick="switchTab('summary',this)">Ringkasan</button>
+            <button class="score-tab" onclick="switchTab('charts',this)">Grafik</button>
+            <button class="score-tab" onclick="switchTab('profile',this)">Profil</button>
+          </div>
+
+          <!-- Tab: Ringkasan -->
+          <div class="score-panel show" id="tab-summary">
+            <div class="glass-card">
+              <h2 style="margin-bottom:10px">Ringkasan Hari Ini</h2>
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="mcl">Total Kendaraan</div>
+                  <div class="mcv">42</div>
+                  <div class="mct up"><i class="fa-solid fa-arrow-trend-up"></i> +5 vs kmrn</div>
+                </div>
+                <div class="metric-card">
+                  <div class="mcl">Est. Margin</div>
+                  <div class="mcv" style="color:var(--primary)">Rp 2.1M</div>
+                  <div class="mct up"><i class="fa-solid fa-arrow-trend-up"></i> +8%</div>
+                </div>
+                <div class="metric-card full">
+                  <div class="mcl">Total Pendapatan</div>
+                  <div class="mcv">Rp 3.2M</div>
+                  <div style="margin-top:6px">
+                    <div class="split-bar-labels">
+                      <span style="color:var(--primary);font-weight:600;font-size:.7rem"><span class="ap-tag">AstraPay</span> QRIS: 2.5M</span>
+                      <span style="font-size:.7rem;color:var(--text-muted)">Tunai: 0.7M</span>
+                    </div>
+                    <div class="split-bar"><div class="split-fill"></div></div>
+                  </div>
+                </div>
+                <div class="metric-card full">
+                  <div class="mcl">Pengeluaran Pemasok (Disbursement)</div>
+                  <div class="mcv" style="color:var(--danger)">Rp 1.1M</div>
+                  <div class="mct neutral">ke 3 distributor via AstraPay</div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-secondary">
+              <i class="fa-solid fa-share-from-square"></i> Bagikan Ringkasan (WhatsApp)
+            </button>
+          </div>
+
+          <!-- Tab: Grafik -->
+          <div class="score-panel" id="tab-charts">
+            <div class="trend-wrap">
+              <h3>Tren Pendapatan 7 Hari</h3>
+              <div class="trend-bars">
+                <div class="trend-avg"></div>
+                <div class="t-bar" style="height:40%"></div>
+                <div class="t-bar" style="height:50%"></div>
+                <div class="t-bar" style="height:60%"></div>
+                <div class="t-bar" style="height:45%"></div>
+                <div class="t-bar" style="height:80%"></div>
+                <div class="t-bar" style="height:70%"></div>
+                <div class="t-bar hi" style="height:92%"></div>
+              </div>
+              <div class="trend-labels"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div>
+            </div>
+            <div class="glass-card">
+              <h2 style="margin-bottom:10px">Kontribusi Layanan</h2>
+              <div class="bkd-item">
+                <div class="bkd-hdr"><span class="bkd-name">Servis Rutin</span><span class="bkd-stats">15 kdr · Rev: 2M · Mar: 1.2M</span></div>
+                <div class="bkd-bar"><div class="bkd-fill" style="width:65%;background:var(--primary)"></div></div>
+              </div>
+              <div class="bkd-item">
+                <div class="bkd-hdr"><span class="bkd-name">Ganti Oli</span><span class="bkd-stats">22 kdr · Rev: 900k · Mar: 400k</span></div>
+                <div class="bkd-bar"><div class="bkd-fill" style="width:25%;background:#3b82f6"></div></div>
+              </div>
+              <div class="bkd-item" style="margin-bottom:0">
+                <div class="bkd-hdr"><span class="bkd-name">Tambal Ban</span><span class="bkd-stats">5 kdr · Rev: 100k · Mar: 80k</span></div>
+                <div class="bkd-bar"><div class="bkd-fill" style="width:10%;background:#94a3b8"></div></div>
+              </div>
+            </div>
+            <div class="glass-card mb0">
+              <h2 style="margin-bottom:10px">5 SKU Terbanyak Digunakan</h2>
+              <div class="sku-li"><div><div class="sln">AHM Motor Oil 0.8L</div><div class="slc">Biaya: Rp 1.1M</div></div><div class="slv">28 unit</div></div>
+              <div class="sku-li"><div><div class="sln">Busi NGK CR6HSA</div><div class="slc">Biaya: Rp 300k</div></div><div class="slv">15 unit</div></div>
+              <div class="sku-li"><div><div class="sln">Minyak Rem DOT-4</div><div class="slc">Biaya: Rp 120k</div></div><div class="slv">8 unit</div></div>
+              <div class="sku-li"><div><div class="sln">V-Belt Yamaha</div><div class="slc">Biaya: Rp 450k</div></div><div class="slv">5 unit</div></div>
+              <div class="sku-li"><div><div class="sln">Ban IRC 90/90-14</div><div class="slc">Biaya: Rp 600k</div></div><div class="slv">3 unit</div></div>
+            </div>
+          </div>
+
+          <!-- Tab: Profil -->
+          <div class="score-panel" id="tab-profile">
+            <div class="glass-card">
+              <h2 style="margin-bottom:8px">Profil Bisnis Digital</h2>
+              <div class="profile-badge-chip"><i class="fa-solid fa-shield-halved"></i> Membangun Kesiapan Kredit</div>
+              <p class="profile-desc">Profil ini dibentuk dari data operasional Anda dan dapat mendukung pengajuan pembiayaan di ekosistem Astra di masa depan.</p>
+              <div class="dimension">
+                <div class="dim-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                <div class="dim-content"><h4>Volume Transaksi</h4><div class="dim-row"><span class="dim-val">Rp 45M/bln</span><span class="dim-status green"><i class="fa-solid fa-arrow-trend-up"></i> Tumbuh</span></div></div>
+              </div>
+              <div class="dimension">
+                <div class="dim-icon"><i class="fa-solid fa-water"></i></div>
+                <div class="dim-content"><h4>Stabilitas Arus Kas</h4><div class="dim-row"><span class="dim-val">95% Inflow</span><span class="dim-status green"><i class="fa-solid fa-minus"></i> Stabil</span></div></div>
+              </div>
+              <div class="dimension">
+                <div class="dim-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                <div class="dim-content"><h4>Keandalan Pembayaran</h4><div class="dim-row"><span class="dim-val">98% Ontime</span><span class="dim-status green"><i class="fa-solid fa-minus"></i> Andal</span></div></div>
+              </div>
+              <div class="dimension">
+                <div class="dim-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="dim-content"><h4>Tren Pertumbuhan</h4><div class="dim-row"><span class="dim-val">Top 15%</span><span class="dim-status warn"><i class="fa-solid fa-arrow-trend-down"></i> Perlu perhatian</span></div></div>
+              </div>
+            </div>
+            <p class="disclaimer">Data ini dibangun dari transaksi GarPay dan riwayat GarStock, bukan dari laporan manual. Cocok untuk pengajuan pembiayaan Astra.</p>
+            <button class="btn btn-primary">
+              <i class="fa-solid fa-building-columns"></i> Pelajari Astra Financial
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /screens-area -->
+
+      <!-- ================================================ -->
+      <!-- BOM BOTTOM SHEET                                 -->
+      <!-- ================================================ -->
+      <div class="bs-overlay" id="bom-overlay" onclick="closeBOM()"></div>
+      <div class="bottom-sheet" id="bom-sheet" onclick="event.stopPropagation()">
+        <div class="sheet-handle"></div>
+        <div class="sheet-hdr">
+          <h2 id="sheet-title">BOM Layanan</h2>
+          <button class="sheet-close" onclick="closeBOM()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="sheet-body">
+          <p class="bom-label">Suku Cadang Otomatis (BOM)</p>
+          <ul id="bom-list" style="list-style:none"></ul>
+        </div>
+        <div class="sheet-foot">
+          <div class="sum-row"><span>Biaya Jasa</span><span id="sum-svc">Rp 0</span></div>
+          <div class="sum-row"><span>Suku Cadang</span><span id="sum-parts">Rp 0</span></div>
+          <div class="sum-row total"><span>Total</span><span class="t-amt" id="sum-total">Rp 0</span></div>
+          <div class="pts-chip"><i class="fa-solid fa-star"></i> Estimasi AstraPoints: <strong id="bom-pts">0</strong> Poin</div>
+          <button class="btn btn-primary" onclick="goToQRIS()">
+            <i class="fa-solid fa-qrcode"></i> Bayar via AstraPay QRIS
+          </button>
+          <button class="btn btn-secondary" onclick="closeBOM()">
+            <i class="fa-solid fa-money-bill-wave"></i> Pembayaran Tunai
+          </button>
+        </div>
+      </div>
+
+      <!-- ================================================ -->
+      <!-- RESTOCK MODAL                                    -->
+      <!-- ================================================ -->
+      <div class="modal-overlay" id="restock-overlay" onclick="closeRestockModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+          <div class="modal-handle"></div>
+          <div class="modal-title">Konfirmasi Restok</div>
+          <p class="modal-sub">Tinjau EOQ dan proses pembayaran ke distributor</p>
+          <div class="fg"><label>Distributor</label><div class="fval">Astra Parts Hub (Waktu tunggu: 1 hari)</div></div>
+          <div class="fg"><label>Item SKU</label><div class="fval">AHM Motor Oil 0.8L</div></div>
+          <div class="fg"><label>Kuantitas Restok (Saran EOQ)</label><input type="number" value="150" step="10" id="restock-qty"></div>
+          <div class="modal-total">
+            <span class="mt-l">Total Transfer</span>
+            <span class="mt-a">Rp 6.750.000</span>
+          </div>
+          <button class="btn btn-primary" id="restock-btn" onclick="confirmRestock()">
+            <i class="fa-solid fa-paper-plane"></i> Bayar via AstraPay Disbursement
+          </button>
+          <button class="btn btn-secondary" onclick="closeRestockModal()">Batal</button>
+        </div>
+      </div>
+
+      <!-- ================================================ -->
+      <!-- BOTTOM NAV                                       -->
+      <!-- ================================================ -->
+      <div class="bottom-nav">
+        <div class="nav-tab active" id="nav-garpay" onclick="goToSection('garpay')">
+          <i class="fa-solid fa-cash-register"></i><span>GarPay</span>
+        </div>
+        <div class="nav-tab" id="nav-garstock" onclick="goToSection('garstock')">
+          <i class="fa-solid fa-boxes-stacked"></i><span>GarStock</span>
+        </div>
+        <div class="nav-tab" id="nav-garscore" onclick="goToSection('garscore')">
+          <i class="fa-solid fa-chart-pie"></i><span>GarScore</span>
+        </div>
+      </div>
+
+    </div><!-- /phone-screen -->
+  </div><!-- /phone-outer -->
+</div><!-- /phone-wrap -->
+
+<p class="proto-foot">GarOps AI × <span>AstraPay</span> — Interactive Prototype v1.0 · Hackathon 2026</p>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let currentSection = 'garpay';
+let bomTotal = 0;
+let bomServiceName = '';
+
+const sectionMap = {
+  garpay: 'screen-garpay',
+  garstock: 'screen-garstock',
+  garscore: 'screen-garscore'
+};
+
+// ── Screen navigation ──────────────────────────────────
+function showScreen(id) {
+  const prev = document.querySelector('.screen.active');
+  const next = document.getElementById(id);
+  if (!next || (prev && prev.id === id)) return;
+  if (prev) {
+    prev.classList.remove('active');
+    prev.classList.add('exit');
+    setTimeout(() => prev && prev.classList.remove('exit'), 360);
+  }
+  next.classList.add('active');
+}
+
+function goToSection(section) {
+  currentSection = section;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('nav-' + section).classList.add('active');
+  showScreen(sectionMap[section]);
+}
+
+function goBack(section) { goToSection(section); }
+
+// ── GarPay: BOM sheet ──────────────────────────────────
+function openBOM(name, total, items) {
+  bomServiceName = name;
+  bomTotal = total;
+  document.getElementById('sheet-title').textContent = 'BOM — ' + name;
+
+  let svcFee = 0, partsFee = 0;
+  const list = document.getElementById('bom-list');
+  list.innerHTML = '';
+  items.forEach(item => {
+    const isLabor = item.n.toLowerCase().includes('jasa');
+    if (isLabor) svcFee += item.p; else partsFee += item.p;
+    const li = document.createElement('li');
+    li.className = 'bom-row';
+    li.innerHTML = `
+      <div>
+        <div class="bom-name">${item.n}</div>
+        <div class="bom-qty">
+          <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+          <span class="qty-num">${item.q}</span>
+          <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+        </div>
+      </div>
+      <span class="bom-price">Rp ${item.p.toLocaleString('id-ID')}</span>
+    `;
+    list.appendChild(li);
+  });
+
+  document.getElementById('sum-svc').textContent = 'Rp ' + svcFee.toLocaleString('id-ID');
+  document.getElementById('sum-parts').textContent = 'Rp ' + partsFee.toLocaleString('id-ID');
+  document.getElementById('sum-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+  document.getElementById('bom-pts').textContent = Math.floor(total / 500);
+
+  document.getElementById('bom-overlay').classList.add('show');
+  document.getElementById('bom-sheet').classList.add('show');
+}
+
+function closeBOM() {
+  document.getElementById('bom-overlay').classList.remove('show');
+  document.getElementById('bom-sheet').classList.remove('show');
+}
+
+function changeQty(btn, delta) {
+  const numEl = btn.parentElement.querySelector('.qty-num');
+  let val = parseInt(numEl.textContent) + delta;
+  if (val < 1) val = 1;
+  numEl.textContent = val;
+}
+
+function goToQRIS() {
+  closeBOM();
+  document.getElementById('qris-amount').textContent = 'Rp ' + bomTotal.toLocaleString('id-ID');
+  document.getElementById('qris-service').textContent = bomServiceName;
+  // reset status
+  const st = document.getElementById('pay-status');
+  st.className = 'pay-status waiting';
+  st.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Menunggu pelanggan scan QRIS...</span>';
+  const btn = document.getElementById('sim-btn');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-bolt"></i> &nbsp;Simulasi: Pelanggan Berhasil Bayar';
+  showScreen('screen-qris');
+}
+
+// ── Payment simulation ─────────────────────────────────
+function simulatePayment() {
+  const btn = document.getElementById('sim-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> &nbsp;Memproses webhook...';
+
+  setTimeout(() => {
+    const st = document.getElementById('pay-status');
+    st.className = 'pay-status success';
+    st.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>Webhook AstraPay: Pembayaran Terkonfirmasi!</span>';
+
+    setTimeout(() => {
+      document.getElementById('rcpt-amount').textContent = 'Rp ' + bomTotal.toLocaleString('id-ID');
+      document.getElementById('rcpt-service').textContent = bomServiceName;
+      document.getElementById('rcpt-pts').textContent = '+' + Math.floor(bomTotal / 500) + ' Poin';
+      document.getElementById('rcpt-balance').textContent = '↑ Rp ' + (12450000 + bomTotal).toLocaleString('id-ID');
+      showScreen('screen-receipt');
+    }, 900);
+  }, 1800);
+}
+
+function shareReceipt(btn) {
+  btn.innerHTML = '<i class="fa-solid fa-check"></i> Resi Dibagikan!';
+  btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+  setTimeout(() => {
+    btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Bagikan ke WhatsApp';
+    btn.style.background = '';
+  }, 2200);
+}
+
+// ── GarStock: restock modal ────────────────────────────
+function openRestockModal(e) {
+  if (e) e.stopPropagation();
+  const btn = document.getElementById('restock-btn');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Bayar via AstraPay Disbursement';
+  btn.style.background = '';
+  document.getElementById('restock-overlay').classList.add('show');
+}
+
+function closeRestockModal() {
+  document.getElementById('restock-overlay').classList.remove('show');
+}
+
+function confirmRestock() {
+  const btn = document.getElementById('restock-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses Disbursement...';
+
+  setTimeout(() => {
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Transfer Berhasil!';
+    btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+    setTimeout(() => {
+      closeRestockModal();
+      showScreen('screen-restock-success');
+    }, 800);
+  }, 1900);
+}
+
+// ── GarScore tabs ─────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.score-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.score-panel').forEach(p => p.classList.remove('show'));
+  document.getElementById('tab-' + name).classList.add('show');
+}
+
+// ── Filter chips ───────────────────────────────────────
+function setFilter(el) {
+  el.closest('.filter-row').querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
